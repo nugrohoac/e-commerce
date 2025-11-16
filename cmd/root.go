@@ -25,8 +25,8 @@ var (
 		Long:  "",
 	}
 
-	userRepository user.UserRepository
-	authService    auth.AuthService
+	userRepository user.Repository
+	authService    auth.Service
 	cfg            *config.Configuration
 	cred           *config.Credential
 	err            error
@@ -56,6 +56,6 @@ func initConfig() {
 		log.Fatal()
 	}
 
-	userRepository = user.NewUserRepository(dbConnection)
-	authService = auth.NewAuthService(userRepository)
+	userRepository = user.NewRepository(dbConnection)
+	authService = auth.NewService(userRepository)
 }

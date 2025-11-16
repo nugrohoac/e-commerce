@@ -12,27 +12,27 @@ import (
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/user"
 )
 
-type AuthService interface {
+type Service interface {
 	Login(ctx context.Context, identifier, password string) (*model.AuthResponse, error)
 }
 
-type authService struct {
-	userRepo user.UserRepository
+type service struct {
+	userRepo user.Repository
 }
 
-func (a authService) Login(ctx context.Context, identifier, password string) (*model.AuthResponse, error) {
+func (s service) Login(ctx context.Context, identifier, password string) (*model.AuthResponse, error) {
 	var (
 		userEntity *entity.User
 		err        error
 	)
 
 	if strings.Contains(identifier, "@") {
-		userEntity, err = a.userRepo.GetByEmail(ctx, identifier)
+		userEntity, err = s.userRepo.GetByEmail(ctx, identifier)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		userEntity, err = a.userRepo.GetByPhone(ctx, identifier)
+		userEntity, err = s.userRepo.GetByPhone(ctx, identifier)
 		if err != nil {
 			return nil, err
 		}
@@ -53,6 +53,6 @@ func (a authService) Login(ctx context.Context, identifier, password string) (*m
 	}, nil
 }
 
-func NewAuthService(userRepo user.UserRepository) AuthService {
-	return authService{userRepo: userRepo}
+func NewService(userRepo user.Repository) Service {
+	return service{userRepo: userRepo}
 }

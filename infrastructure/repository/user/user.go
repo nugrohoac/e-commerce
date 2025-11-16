@@ -9,17 +9,17 @@ import (
 	"github.com/nugrohoac/e-commerce/entity"
 )
 
-//go:generate mockery --name UserRepository --output ../../../mocks/infrastructure/repository/user
-type UserRepository interface {
+//go:generate mockery --name Repository --output ../../../mocks/infrastructure/repository/user
+type Repository interface {
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	GetByPhone(ctx context.Context, phone string) (*entity.User, error)
 }
 
-type userRepository struct {
+type repository struct {
 	db *sql.DB
 }
 
-func (u userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+func (r repository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	query, args, err := sq.Select("id",
 		"name",
 		"email",
@@ -32,7 +32,7 @@ func (u userRepository) GetByEmail(ctx context.Context, email string) (*entity.U
 		return nil, err
 	}
 
-	row := u.db.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 	var user entity.User
 	if err = row.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.PasswordHash); err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (u userRepository) GetByEmail(ctx context.Context, email string) (*entity.U
 	return &user, nil
 }
 
-func (u userRepository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
+func (r repository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
 	query, args, err := sq.Select("id",
 		"name",
 		"email",
@@ -54,7 +54,7 @@ func (u userRepository) GetByPhone(ctx context.Context, phone string) (*entity.U
 		return nil, err
 	}
 
-	row := u.db.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 	var user entity.User
 	if err = row.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.PasswordHash); err != nil {
 		return nil, err
@@ -63,8 +63,8 @@ func (u userRepository) GetByPhone(ctx context.Context, phone string) (*entity.U
 	return &user, nil
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
-	return userRepository{
+func NewRepository(db *sql.DB) Repository {
+	return repository{
 		db: db,
 	}
 }

@@ -13,7 +13,7 @@ var cmdRest = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		echoInstance := echo.New()
 
-		auth.RegisterAuthHandler(echoInstance, authService)
+		auth.RegisterHandler(echoInstance, authService)
 
 		log.Infof("Starting HTTP Server at %v", cfg.Service.Port.REST)
 

@@ -9,11 +9,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type authHandler struct {
-	authService auth.AuthService
+type handler struct {
+	authService auth.Service
 }
 
-func (a authHandler) Login(c echo.Context) error {
+func (h handler) Login(c echo.Context) error {
 	var req model.LoginRequest
 
 	// Parse & validate JSON request
@@ -26,7 +26,7 @@ func (a authHandler) Login(c echo.Context) error {
 	}
 
 	// Call service layer
-	response, err := a.authService.Login(c.Request().Context(), req.Identifier, req.Password)
+	response, err := h.authService.Login(c.Request().Context(), req.Identifier, req.Password)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": "invalid_credentials"})
 	}
@@ -34,9 +34,9 @@ func (a authHandler) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func RegisterAuthHandler(e *echo.Echo, authService auth.AuthService) {
-	handler := authHandler{authService: authService}
+func RegisterHandler(e *echo.Echo, authService auth.Service) {
+	h := handler{authService: authService}
 	route := e.Group("/auth")
 
-	route.POST("/login", handler.Login)
+	route.POST("/login", h.Login)
 }
