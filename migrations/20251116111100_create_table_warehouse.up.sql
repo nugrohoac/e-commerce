@@ -1,0 +1,8 @@
+CREATE TABLE `warehouse` (
+     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     `shop_id` BIGINT UNSIGNED NOT NULL,
+     `name` VARCHAR(150) NOT NULL,
+     `status` ENUM('active', 'inactive') DEFAULT 'active',
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
