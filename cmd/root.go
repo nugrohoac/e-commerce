@@ -6,6 +6,8 @@ import (
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
+	prodSvc "github.com/nugrohoac/e-commerce/application/service/product"
+	"github.com/nugrohoac/e-commerce/infrastructure/repository/product"
 	"github.com/spf13/cobra"
 
 	"github.com/nugrohoac/e-commerce/application/service/auth"
@@ -25,11 +27,18 @@ var (
 		Long:  "",
 	}
 
-	userRepository user.Repository
+	// repository
+	userRepository    user.Repository
+	productRepository product.Repository
+
+	// service
 	authService    auth.Service
-	cfg            *config.Configuration
-	cred           *config.Credential
-	err            error
+	productService prodSvc.Service
+
+	// config
+	cfg  *config.Configuration
+	cred *config.Credential
+	err  error
 )
 
 func initConfig() {
@@ -56,6 +65,11 @@ func initConfig() {
 		log.Fatal()
 	}
 
+	// repository
 	userRepository = user.NewRepository(dbConnection)
+	productRepository = product.NewRepository(dbConnection)
+
+	// service
 	authService = auth.NewService(userRepository)
+	productService = prodSvc.NewService(productRepository)
 }

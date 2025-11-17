@@ -3,8 +3,10 @@ package cmd
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/nugrohoac/e-commerce/transport/rest/auth"
 	"github.com/spf13/cobra"
+
+	"github.com/nugrohoac/e-commerce/transport/rest/auth"
+	prodRest "github.com/nugrohoac/e-commerce/transport/rest/product"
 )
 
 var cmdRest = &cobra.Command{
@@ -14,6 +16,7 @@ var cmdRest = &cobra.Command{
 		echoInstance := echo.New()
 
 		auth.RegisterHandler(echoInstance, authService)
+		prodRest.RegisterHandler(echoInstance, productService)
 
 		log.Infof("Starting HTTP Server at %v", cfg.Service.Port.REST)
 
