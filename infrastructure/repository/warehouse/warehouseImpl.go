@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/nugrohoac/e-commerce/entity"
 )
 
 type Tx struct {
@@ -99,6 +100,40 @@ func (r repository) InsertTransferLog(ctx context.Context, tx *Tx, productID, fr
 	}
 
 	return nil
+}
+
+func (r repository) UpdateWarehouseStatus(ctx context.Context, ID uint64, status string) error {
+	query, args, err := sq.Update("warehouse").
+		Set("status", status).
+		Where(sq.Eq{"id": ID}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = r.db.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repository) GetByID(ctx context.Context, ID uint64) (*entity.Warehouse, error) {
+	query, args, err := sq.Select("id", "shop_id", "name", "status").
+		From("warehouse").
+		Where(sq.Eq{"id": ID}).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	var w entity.Warehouse
+	row := r.db.QueryRowContext(ctx, query, args...)
+	if err = row.Scan(&w.ID, &w.ShopID, &w.Name, &w.Status); err != nil {
+		return nil, err
+	}
+
+	return &w, nil
 }
 
 func NewRepository(db *sql.DB) Repository {

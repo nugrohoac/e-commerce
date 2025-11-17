@@ -1,4 +1,4 @@
-package constant
+package enum
 
 const (
 	OrderStatusCanceled = "canceled"

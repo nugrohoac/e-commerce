@@ -5,6 +5,7 @@ import (
 
 	"github.com/nugrohoac/e-commerce/application/model"
 	"github.com/nugrohoac/e-commerce/constant"
+	"github.com/nugrohoac/e-commerce/constant/enum"
 	"github.com/nugrohoac/e-commerce/entity"
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/order"
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/product"
@@ -114,7 +115,7 @@ func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
 		return "", err
 	}
 
-	return constant.OrderStatusPaid, nil
+	return enum.OrderStatusPaid, nil
 }
 
 func (s service) Cancel(ctx context.Context, orderID uint64) (string, error) {
@@ -150,7 +151,7 @@ func (s service) Cancel(ctx context.Context, orderID uint64) (string, error) {
 		return "", err
 	}
 
-	return constant.OrderStatusCanceled, err
+	return enum.OrderStatusCanceled, err
 }
 
 func NewService(orderRepo order.Repository, productRepo product.Repository) Service {

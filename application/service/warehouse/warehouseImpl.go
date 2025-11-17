@@ -5,6 +5,7 @@ import (
 
 	"github.com/nugrohoac/e-commerce/application/model"
 	"github.com/nugrohoac/e-commerce/constant"
+	"github.com/nugrohoac/e-commerce/constant/enum"
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/warehouse"
 )
 
@@ -52,6 +53,42 @@ func (s service) TransferStock(
 	return &model.WarehouseTransferResponse{
 		Status:  constant.StatusSuccess,
 		Message: messageStockTransferred,
+	}, nil
+}
+
+func (s service) Activate(ctx context.Context, ID uint64) (*model.Warehouse, error) {
+	err := s.warehouseRepo.UpdateWarehouseStatus(ctx, ID, enum.WarehouseStatusActive)
+	if err != nil {
+		return nil, err
+	}
+
+	wh, err := s.warehouseRepo.GetByID(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Warehouse{
+		ShopID: wh.ShopID,
+		Name:   wh.Name,
+		Status: wh.Status,
+	}, nil
+}
+
+func (s service) Deactivate(ctx context.Context, ID uint64) (*model.Warehouse, error) {
+	err := s.warehouseRepo.UpdateWarehouseStatus(ctx, ID, enum.WarehouseStatusInActive)
+	if err != nil {
+		return nil, err
+	}
+
+	wh, err := s.warehouseRepo.GetByID(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Warehouse{
+		ShopID: wh.ShopID,
+		Name:   wh.Name,
+		Status: wh.Status,
 	}, nil
 }
 
