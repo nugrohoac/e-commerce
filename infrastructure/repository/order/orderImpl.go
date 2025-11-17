@@ -269,6 +269,101 @@ func (r repository) MarkOrderPaid(ctx context.Context, tx *Tx, orderID uint64) e
 	return nil
 }
 
+// cancel
+
+func (r repository) GetActiveReservationsByOrder(ctx context.Context, tx *Tx, orderID uint64) ([]entity.StockReservation, error) {
+	query, args, err := sq.Select("id", "product_id", "warehouse_id", "qty", "status", "expires_at", "created_at").
+		From("stock_reservation").
+		Where(sq.Eq{"order_id": orderID}).
+		Where(sq.Eq{"status": "active"}).
+		Suffix("FOR UPDATE").
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.Tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []entity.StockReservation
+	for rows.Next() {
+		var sr entity.StockReservation
+		if err = rows.Scan(
+			&sr.ID,
+			&sr.OrderID,
+			&sr.ProductID,
+			&sr.WarehouseID,
+			&sr.Qty,
+			&sr.Status,
+			&sr.ExpiresAt,
+			&sr.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		res = append(res, sr)
+	}
+
+	return res, nil
+}
+
+func (r repository) ReleaseStock(ctx context.Context, tx *Tx, productID, warehouseID uint64, qty int) error {
+	query, args, err := sq.Update("product_warehouse").
+		Set("reserved_quantity", sq.Expr("reserved_quantity - ?", qty)).
+		Where(sq.Eq{
+			"product_id":   productID,
+			"warehouse_id": warehouseID,
+		}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repository) MarkReservationReleased(ctx context.Context, tx *Tx, orderID uint64) error {
+	query, args, err := sq.Update("stock_reservation").
+		Set("status", "released").
+		Where(sq.Eq{
+			"order_id": orderID,
+			"status":   "active",
+		}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repository) MarkOrderCanceled(ctx context.Context, tx *Tx, orderID uint64) error {
+	query, args, err := sq.Update("orders").
+		Set("status", "canceled").
+		Set("updated_at", time.Now()).
+		Where(sq.Eq{"id": orderID}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewRepository(db *sql.DB) Repository {
 	return &repository{
 		db: db,

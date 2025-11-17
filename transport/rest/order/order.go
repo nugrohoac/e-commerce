@@ -44,7 +44,25 @@ func (h *handler) PayOrder(c echo.Context) error {
 		"order_id": orderIDUint,
 		"status":   status,
 	})
+}
 
+func (h *handler) CancelOrder(c echo.Context) error {
+	idParam := c.Param("id")
+
+	orderID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return c.JSON(400, echo.Map{"error": "invalid order id"})
+	}
+
+	status, err := h.orderService.Cancel(c.Request().Context(), orderID)
+	if err != nil {
+		return c.JSON(400, echo.Map{"error": err.Error()})
+	}
+
+	return c.JSON(200, echo.Map{
+		"order_id": orderID,
+		"status":   status,
+	})
 }
 
 func RegisterHandler(e *echo.Echo, orderService order.Service) {
@@ -52,4 +70,5 @@ func RegisterHandler(e *echo.Echo, orderService order.Service) {
 	group := e.Group("/order")
 	group.POST("/checkout", h.Checkout)
 	group.POST("/:id/pay", h.PayOrder)
+	group.POST("/:id/cancel", h.CancelOrder)
 }

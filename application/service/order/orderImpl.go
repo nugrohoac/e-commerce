@@ -119,7 +119,49 @@ func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
 		return "", err
 	}
 
-	return "paid", nil
+	return constant.OrderStatusPaid, nil
+}
+
+func (s service) Cancel(ctx context.Context, orderID uint64) (string, error) {
+	// begin trx
+	tx, err := s.orderRepo.BeginTx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = s.orderRepo.RollbackTx(tx)
+	}()
+
+	// Ambil reservation yang masih active
+	reservations, err := s.orderRepo.GetActiveReservationsByOrder(ctx, tx, orderID)
+	if err != nil {
+		return "", err
+	}
+
+	// Release stok (kurangi reserved_quantity)
+	for _, r := range reservations {
+		if err = s.orderRepo.ReleaseStock(ctx, tx, r.ProductID, r.WarehouseID, r.Qty); err != nil {
+			return "", err
+		}
+	}
+
+	// Ubah reservation jadi released
+	if err = s.orderRepo.MarkReservationReleased(ctx, tx, orderID); err != nil {
+		return "", err
+	}
+
+	// Update order = canceled
+	if err = s.orderRepo.MarkOrderCanceled(ctx, tx, orderID); err != nil {
+		return "", err
+	}
+
+	// Commit trx
+	if err = s.orderRepo.CommitTx(tx); err != nil {
+		return "", err
+	}
+
+	return constant.OrderStatusCanceled, err
 }
 
 func NewService(orderRepo order.Repository, productRepo product.Repository) Service {

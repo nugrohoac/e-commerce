@@ -25,4 +25,11 @@ type Repository interface {
 	DeductStock(ctx context.Context, tx *Tx, productID, warehouseID uint64, qty int) error
 	MarkReservationConverted(ctx context.Context, tx *Tx, orderID uint64) error
 	MarkOrderPaid(ctx context.Context, tx *Tx, orderID uint64) error
+
+	// cancel
+
+	GetActiveReservationsByOrder(ctx context.Context, tx *Tx, orderID uint64) ([]entity.StockReservation, error)
+	ReleaseStock(ctx context.Context, tx *Tx, productID, warehouseID uint64, qty int) error
+	MarkReservationReleased(ctx context.Context, tx *Tx, orderID uint64) error
+	MarkOrderCanceled(ctx context.Context, tx *Tx, orderID uint64) error
 }
