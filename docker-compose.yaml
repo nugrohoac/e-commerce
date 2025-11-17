@@ -1,0 +1,12 @@
+version: "2.3"
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: ecommerce-image
+    container_name: ecommerce-container-api
+    ports:
+      - "9000:9000"
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
