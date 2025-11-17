@@ -87,7 +87,6 @@ func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
 		_ = s.orderRepo.RollbackTx(tx)
 	}()
 
-	// 1. Get all active reservations
 	reservations, err := s.orderRepo.GetReservationsByOrder(ctx, tx, orderID)
 	if err != nil {
 		return "", err
@@ -97,24 +96,20 @@ func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
 		return "", constant.ErrNoActiveReservation
 	}
 
-	// 2. Deduct real stock for each reservation
 	for _, r := range reservations {
 		if err = s.orderRepo.DeductStock(ctx, tx, r.ProductID, r.WarehouseID, r.Qty); err != nil {
 			return "", err
 		}
 	}
 
-	// 3. Mark reservations converted
 	if err = s.orderRepo.MarkReservationConverted(ctx, tx, orderID); err != nil {
 		return "", err
 	}
 
-	// 4. Update order status
 	if err = s.orderRepo.MarkOrderPaid(ctx, tx, orderID); err != nil {
 		return "", err
 	}
 
-	// 5. Commit
 	if err = s.orderRepo.CommitTx(tx); err != nil {
 		return "", err
 	}
@@ -123,7 +118,6 @@ func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
 }
 
 func (s service) Cancel(ctx context.Context, orderID uint64) (string, error) {
-	// begin trx
 	tx, err := s.orderRepo.BeginTx(ctx)
 	if err != nil {
 		return "", err
@@ -133,30 +127,25 @@ func (s service) Cancel(ctx context.Context, orderID uint64) (string, error) {
 		_ = s.orderRepo.RollbackTx(tx)
 	}()
 
-	// Ambil reservation yang masih active
 	reservations, err := s.orderRepo.GetActiveReservationsByOrder(ctx, tx, orderID)
 	if err != nil {
 		return "", err
 	}
 
-	// Release stok (kurangi reserved_quantity)
 	for _, r := range reservations {
 		if err = s.orderRepo.ReleaseStock(ctx, tx, r.ProductID, r.WarehouseID, r.Qty); err != nil {
 			return "", err
 		}
 	}
 
-	// Ubah reservation jadi released
 	if err = s.orderRepo.MarkReservationReleased(ctx, tx, orderID); err != nil {
 		return "", err
 	}
 
-	// Update order = canceled
 	if err = s.orderRepo.MarkOrderCanceled(ctx, tx, orderID); err != nil {
 		return "", err
 	}
 
-	// Commit trx
 	if err = s.orderRepo.CommitTx(tx); err != nil {
 		return "", err
 	}
