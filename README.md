@@ -1,11 +1,3 @@
-
-Article Repository
-add new
-add new more
-
-again
-again more
-
 ## Prerequisites
 Make sure you have installed all of the following prerequisites on your development machine:
 * go - [Download & Install](https://go.dev/dl/)
