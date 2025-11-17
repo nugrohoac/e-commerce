@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nugrohoac/e-commerce/transport/rest/auth"
+	orderRest "github.com/nugrohoac/e-commerce/transport/rest/order"
 	prodRest "github.com/nugrohoac/e-commerce/transport/rest/product"
 )
 
@@ -17,6 +18,7 @@ var cmdRest = &cobra.Command{
 
 		auth.RegisterHandler(echoInstance, authService)
 		prodRest.RegisterHandler(echoInstance, productService)
+		orderRest.RegisterHandler(echoInstance, orderService)
 
 		log.Infof("Starting HTTP Server at %v", cfg.Service.Port.REST)
 

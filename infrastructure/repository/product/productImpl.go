@@ -14,6 +14,37 @@ type repository struct {
 	db *sql.DB
 }
 
+func NewRepository(db *sql.DB) Repository {
+	return repository{db: db}
+}
+
+func (r repository) GetByID(ctx context.Context, ID uint64) (*entity.Product, error) {
+	query, args, err := sq.Select("id", "name", "sku", "price", "created_at", "updated_at").
+		From("product").
+		Where(sq.Eq{"id": ID}).
+		Limit(1).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	p := &entity.Product{}
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
+		&p.ID,
+		&p.Name,
+		&p.SKU,
+		&p.Price,
+		&p.CreatedAt,
+		&p.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
 func (r repository) GetProducts(ctx context.Context) ([]entity.ProductStock, error) {
 	query := sq.Select(
 		"p.id",
@@ -57,8 +88,4 @@ func (r repository) GetProducts(ctx context.Context) ([]entity.ProductStock, err
 	}
 
 	return items, nil
-}
-
-func NewRepository(db *sql.DB) Repository {
-	return repository{db: db}
 }
