@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nugrohoac/e-commerce/application/model"
+	"github.com/nugrohoac/e-commerce/constant"
 	"github.com/nugrohoac/e-commerce/entity"
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/order"
 	"github.com/nugrohoac/e-commerce/infrastructure/repository/product"
@@ -74,6 +75,51 @@ func (s service) Checkout(ctx context.Context, req model.CheckoutRequest) (*mode
 		OrderID: orderID,
 		Status:  "pending",
 	}, nil
+}
+
+func (s service) Pay(ctx context.Context, orderID uint64) (string, error) {
+	tx, err := s.orderRepo.BeginTx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = s.orderRepo.RollbackTx(tx)
+	}()
+
+	// 1. Get all active reservations
+	reservations, err := s.orderRepo.GetReservationsByOrder(ctx, tx, orderID)
+	if err != nil {
+		return "", err
+	}
+
+	if len(reservations) == 0 {
+		return "", constant.ErrNoActiveReservation
+	}
+
+	// 2. Deduct real stock for each reservation
+	for _, r := range reservations {
+		if err = s.orderRepo.DeductStock(ctx, tx, r.ProductID, r.WarehouseID, r.Qty); err != nil {
+			return "", err
+		}
+	}
+
+	// 3. Mark reservations converted
+	if err = s.orderRepo.MarkReservationConverted(ctx, tx, orderID); err != nil {
+		return "", err
+	}
+
+	// 4. Update order status
+	if err = s.orderRepo.MarkOrderPaid(ctx, tx, orderID); err != nil {
+		return "", err
+	}
+
+	// 5. Commit
+	if err = s.orderRepo.CommitTx(tx); err != nil {
+		return "", err
+	}
+
+	return "paid", nil
 }
 
 func NewService(orderRepo order.Repository, productRepo product.Repository) Service {

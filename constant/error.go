@@ -7,4 +7,5 @@ var (
 	ErrNothingToUnlock     = errors.New("nothing to unlock")
 	ErrFailedToUnlockRedis = errors.New("failed to unlock redis")
 	ErrNoWarehouseHasStock = errors.New("no warehouse has enough stock")
+	ErrNoActiveReservation = errors.New("no active reservations")
 )

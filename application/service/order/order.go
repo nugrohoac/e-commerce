@@ -8,4 +8,5 @@ import (
 
 type Service interface {
 	Checkout(ctx context.Context, req model.CheckoutRequest) (*model.CheckoutResponse, error)
+	Pay(ctx context.Context, orderID uint64) (string, error)
 }

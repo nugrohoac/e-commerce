@@ -18,6 +18,8 @@ type repository struct {
 	db *sql.DB
 }
 
+// checout
+
 func (r repository) BeginTx(ctx context.Context) (*Tx, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -162,6 +164,99 @@ func (r repository) UpdateTotalPrice(ctx context.Context, tx *Tx, ID uint64, tot
 	query, args, err := sq.Update("`order`").
 		SetMap(sq.Eq{"total_price": total, "updated_at": time.Now()}).
 		Where(sq.Eq{"id": ID}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// payment
+
+func (r repository) GetReservationsByOrder(ctx context.Context, tx *Tx, orderID uint64) ([]entity.StockReservation, error) {
+	query, args, err := sq.Select("id", "order_id", "product_id", "warehouse_id", "qty", "status", "expires_at", " created_at").
+		From("stock_reservation").
+		Where(sq.Eq{"order_id": orderID}).
+		Where(sq.Eq{"status": "active"}).
+		Suffix("FOR UPDATE").
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	//query := `
+	//    SELECT id, order_id, product_id, warehouse_id, qty, status, expires_at, created_at
+	//    FROM stock_reservation
+	//    WHERE order_id = ? AND status = 'active'
+	//    FOR UPDATE
+	//`
+
+	rows, err := tx.Tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []entity.StockReservation
+	for rows.Next() {
+		var sr entity.StockReservation
+		if err = rows.Scan(
+			&sr.ID, &sr.OrderID, &sr.ProductID, &sr.WarehouseID,
+			&sr.Qty, &sr.Status, &sr.ExpiresAt, &sr.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		list = append(list, sr)
+	}
+
+	return list, nil
+}
+
+func (r repository) DeductStock(ctx context.Context, tx *Tx, productID, warehouseID uint64, qty int) error {
+	query, args, err := sq.Update("product_warehouse").
+		Set("quantity", sq.Expr("quantity - ?", qty)).
+		Set("reserved_quantity", sq.Expr("reserved_quantity - ?", qty)).
+		Where(sq.Eq{
+			"product_id":   productID,
+			"warehouse_id": warehouseID,
+		}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repository) MarkReservationConverted(ctx context.Context, tx *Tx, orderID uint64) error {
+	query, args, err := sq.Update("stock_reservation").Set("status", "converted_to_order").
+		Where("order_id = ?", orderID).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Tx.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repository) MarkOrderPaid(ctx context.Context, tx *Tx, orderID uint64) error {
+	query, args, err := sq.Update("`order`").
+		Set("status", "paid").
+		Set("updated_at", time.Now()).
+		Where(sq.Eq{"id": orderID}).
 		ToSql()
 	if err != nil {
 		return err
